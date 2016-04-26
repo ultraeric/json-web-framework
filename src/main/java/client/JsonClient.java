@@ -1,3 +1,20 @@
+/*   
+  	This file is part of JSON Web Framework.
+
+    JSON Web Framework is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    JSON Web Framework is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with JSON Web Framework.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package client;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,36 +25,46 @@ import com.google.common.collect.MinMaxPriorityQueue;
 import server.JsonListenerServlet;
 import structures.ClientEvent;
 
-public class JsonClient extends Thread{
-/* This class represents an HTTP Client that holds multiple possible connections to different
+/**
+ * @author Yiqi (Eric) Hou
+ * 
+ * <p>
+ * This class represents an HTTP Client that holds multiple possible connections to different
  * hosts, each with possible URI extensions. This client is meant to be a handler for all
  * data transfers that can be represented through JSON representation. 
-*/
+ *
+ */
+public class JsonClient extends Thread{
 	
 	private volatile Map<String, Connection> connections = new HashMap<String, Connection>();
-//	A hashmap of hosts and their names that can be accessed via this client.
 	
 	private volatile boolean running = false;
-//	A boolean that determines whether or not the client is running. 
 	
 	private MinMaxPriorityQueue<ClientEvent> events = MinMaxPriorityQueue.<ClientEvent>create();
-//	MMPQ of client events
 		
-	private volatile int eventLimit = 20;
-//	Maximum number of events in MMPQ of events
+	private int eventLimit = 20;
 	
-	private volatile JsonListenerServlet servlet;
-//	Servlet listening to incoming JSON requests
+	private JsonListenerServlet servlet;
 			
+	/**
+	 * Constructor linking this JsonClient to a servlet, making this a service client.
+	 * 
+	 * @param jLS	The JsonListenerServlet linked to this client.
+	 */
 	public JsonClient(JsonListenerServlet jLS){
 		servlet = jLS;
 	}
+	
 	public JsonClient(){
 	}
+	
 	public JsonClient(String connectionName, Connection connection){
 		addConnection(connectionName, connection);
 	}
 
+	/**
+	 * @see java.lang.Thread#run()
+	 */
 	@Override
 	public void run(){
 		/* Starts up the client in an asynchronous fashion (behind the scenes multi-thread).
