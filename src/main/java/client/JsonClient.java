@@ -36,6 +36,9 @@ import structures.ClientEvent;
  */
 public class JsonClient extends Thread{
 	
+	public static final int ADD_EVENT = 1;
+	public static final int EXECUTE_EVENTS = 2;
+	
 	private volatile Map<String, Connection> connections = new HashMap<String, Connection>();
 	
 	private volatile boolean running = false;
@@ -74,7 +77,7 @@ public class JsonClient extends Thread{
 		*/
 		running = true;
 		while(running == true){
-			accessEvents("run", this);
+			accessEvents(EXECUTE_EVENTS, this);
 		}
 	}
 	public synchronized Connection addConnection(String connectionName, Connection connection){
@@ -90,53 +93,56 @@ public class JsonClient extends Thread{
 	public void shutDown(){
 		running = false;
 	}
-	private synchronized void accessEvents(String method, Object... o){
-		if(method.equals("execute")){
+	private synchronized void accessEvents(int methodID, Object... o){
+		if(methodID == ADD_EVENT){
 			events.add((ClientEvent) o[0]);
-		}else if(method.equals("run")){
-			if(events.size() > eventLimit)
+		}else if(methodID == EXECUTE_EVENTS){
+			executeEvents();
+		}
+	}
+	private void executeEvents(){
+		if(events.size() > eventLimit)
+			try {
+				events.removeLast().abortedExecute();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		/* Provides a way of removing client events once the queue is overflowed and
+		 * runs the abort code for the event in a separate thread.
+		*/
+		Iterator<ClientEvent> eventsIterator = events.iterator();
+		while(eventsIterator.hasNext()){
+			ClientEvent e = eventsIterator.next();
+			if(e.isTimedOut()){
+				eventsIterator.remove();
 				try {
-					events.removeLast().abortExecute();
+					e.timedOutExcecute();
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-			/* Provides a way of removing client events once the queue is overflowed and
-			 * runs the abort code for the event in a separate thread.
-			*/
-			Iterator<ClientEvent> eventsIterator = events.iterator();
-			while(eventsIterator.hasNext()){
-				ClientEvent e = eventsIterator.next();
-				if(e.isTimedOut()){
-					eventsIterator.remove();
-					try {
-						e.timeOutExcecute();
-					} catch (Exception e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					/* This checks to see if an event has timed out of its specified timeout
-					 * length. If so, it will execute some code.
-					*/
-					
-				}else if(e.getInitiatingEvent().isDone()){
-					try {
-						eventsIterator.remove();
-						e.execute();
-						System.out.println("Event executed");
-					} catch (Exception e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					/* Executes event's code if the HTTP request has completed
-					 * and returned a JSON response.
-					*/
+				/* This checks to see if an event has timed out of its specified timeout
+				 * length. If so, it will execute some code.
+				*/
 				
+			}else if(e.getInitiatingEvent().isDone()){
+				try {
+					eventsIterator.remove();
+					e.start();
+					System.out.println("Event executed");
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
+				/* Executes event's code if the HTTP request has completed
+				 * and returned a JSON response.
+				*/
+			
 			}
 		}
 	}
-	public synchronized void execute(ClientEvent e){
-		accessEvents("execute", e);
+	public synchronized void addEvent(ClientEvent e){
+		accessEvents(ADD_EVENT, e);
 	}
 }
