@@ -34,6 +34,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
@@ -267,6 +268,10 @@ public class Connection {
 	 */
 	@Async
 	public Future<Map<String, Object>> httpGetRaw(String extensionName){
+		return httpGetRaw(extensionName, null);
+	}
+	@Async
+	public Future<Map<String, Object>> httpGetRaw(String extensionName, HttpOptions httpOptions){
 		if(connectionHost == null){
 			throw new HostNotValidException();
 		}
@@ -286,6 +291,9 @@ public class Connection {
 												+ uriExtensions.get(extensionName));
 			httpGetContext.setHeader("Content-Type", "application/json");
 			HttpEntity responseEntity = null;
+			
+			addHttpOptions(httpGetContext, httpOptions);
+			
 			
 			if(basicAuthNeeded && basicAuth.isPreemptive()){
 				try{
@@ -333,7 +341,12 @@ public class Connection {
 	 * @return				Returns a Future object promising a String representing the result of
 	 * 							the POST request.
 	 */
+	@Async
 	public Future<String> httpPostRaw(String extensionName, String message){
+		return httpPostRaw(extensionName, message, null);
+	}
+	@Async
+	public Future<String> httpPostRaw(String extensionName, String message, HttpOptions httpOptions){
 		if(connectionHost == null){
 			throw new HostNotValidException();
 		}
@@ -352,6 +365,8 @@ public class Connection {
 			httpPostContext.setEntity(messageEntity);
 			HttpEntity responseEntity = null;
 			
+			addHttpOptions(httpPostContext, httpOptions);
+				
 			if(basicAuthNeeded && basicAuth.isPreemptive()){
 				try{
 					HttpResponse response = client.execute(httpPostContext, context);
@@ -395,7 +410,12 @@ public class Connection {
 	 * @return				Returns a Future object promising a String representing the result of
 	 * 							the PUT request.
 	 */
+	@Async
 	public Future<String> httpPutRaw(String extensionName, String message){
+		return httpPutRaw(extensionName, message, null);
+	}
+	@Async
+	public Future<String> httpPutRaw(String extensionName, String message, HttpOptions httpOptions){
 		if(connectionHost == null){
 			throw new HostNotValidException();
 		}
@@ -413,6 +433,8 @@ public class Connection {
 			messageEntity.setContentType("application/json");
 			httpPutContext.setEntity(messageEntity);
 			HttpEntity responseEntity = null;
+			
+				addHttpOptions(httpPutContext, httpOptions);
 			
 			if(basicAuthNeeded && basicAuth.isPreemptive()){
 				try{
@@ -450,7 +472,12 @@ public class Connection {
 	 * @return				Returns a Future object promising a String representing the result of
 	 * 							the DELETE request.
 	 */
+	@Async
 	public Future<String> httpDelete(String extensionName){
+		return httpDelete(extensionName, null);
+	}
+	@Async
+	public Future<String> httpDelete(String extensionName, HttpOptions httpOptions){
 		if(connectionHost == null){
 			throw new HostNotValidException();
 		}
@@ -465,6 +492,8 @@ public class Connection {
 					+ connectionHost.getHostName()
 					+ uriExtensions.get(extensionName));
 			HttpEntity responseEntity = null;
+			
+			addHttpOptions(httpDeleteContext, httpOptions);
 			
 			if(basicAuthNeeded && basicAuth.isPreemptive()){
 				try{
@@ -535,5 +564,15 @@ public class Connection {
 		BasicCredentialsProvider basicCredsProvider = new BasicCredentialsProvider();
 		basicCredsProvider.setCredentials(AuthScope.ANY, httpGetCreds);
 		return basicCredsProvider;
+	}
+	
+	private void addHttpOptions(HttpRequestBase httpRequest, HttpOptions httpOptions){
+		if(httpOptions == null){
+			return;
+		}
+		for(String k: httpOptions.getHeaders().keySet()){
+			String v = httpOptions.getHeaders().get(k);
+			httpRequest.addHeader(k, v);
+		}
 	}
 }
