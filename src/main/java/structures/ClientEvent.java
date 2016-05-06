@@ -24,14 +24,16 @@ import com.jcabi.aspects.Async;
 import client.Connection;
 
 /**
+ * @author Yiqi (Eric) Hou
+ * 
+ * <p>
  * An abstract class that ties together an asynchronous HTTP request that is open
  * and waiting for a response and the code that will be executed after that response
  * is received. Used for asynchronous processing of client requests to a remote
  * resource.
 */
-public abstract class ClientEvent implements Comparable{
+public abstract class ClientEvent extends Thread implements Comparable{
 
-	
 	private int timeOutMS = 20000;
 	
 	private long timeStartMS = System.currentTimeMillis();
@@ -45,10 +47,10 @@ public abstract class ClientEvent implements Comparable{
 	public void setInitiatingConnection(Connection initiatingConnection) {
 		this.initiatingConnection = initiatingConnection;
 	}
-	public int getPriority() {
+	public int getEventPriority() {
 		return priority;
 	}
-	public void setPriority(int priority) {
+	public void setEventPriority(int priority) {
 		this.priority = priority;
 	}
 	public int getTimeOutMS() {
@@ -70,21 +72,41 @@ public abstract class ClientEvent implements Comparable{
 	public long getTimeElapsed(){
 		return (System.currentTimeMillis() - timeStartMS);
 	}
+	
+	/**
+	 * Each ClientEvent must be started by a Future object.
+	 * 
+	 * @return	Future object that initiated this ClientEvent
+	 */
 	public Future getInitiatingEvent(){
 		return initiatingEvent;
 	}
+	
+	/**
+	 * Each ClientEvent must be started by a Future object. Not recommended for use unless
+	 * the ClientEvent is created before a request is made to a server.
+	 * 
+	 * @param f	Future object that initiated this ClientEvent
+	 */
 	public void setInitiatingEvent(Future f){
 		initiatingEvent = f;
 	}
+	
+	/**
+	 * Recommended constructor. ClientEvent should be started by a Future object created
+	 * during an HTTP request method from the Connection class.
+	 * 
+	 * @param ini	Future object that initiated this ClientEvent
+	 */
 	public ClientEvent(Future ini){
 		initiatingEvent = ini;
 	}
 	@Async
-	public abstract void timeOutExcecute() throws Exception;
+	public abstract void timedOutExcecute() throws Exception;
+	@Override
+	public abstract void run();
 	@Async
-	public abstract void execute() throws Exception;
-	@Async
-	public abstract void abortExecute() throws Exception;
+	public abstract void abortedExecute() throws Exception;
 	@Override
 	public int compareTo(Object o){
 		if(o instanceof ClientEvent){
