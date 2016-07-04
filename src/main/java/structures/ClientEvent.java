@@ -31,8 +31,10 @@ import client.Connection;
  * and waiting for a response and the code that will be executed after that response
  * is received. Used for asynchronous processing of client requests to a remote
  * resource.
+ * 
+ * Set the action on run, abort, and timeout after instantiation.
 */
-public abstract class ClientEvent extends Thread implements Comparable{
+public class ClientEvent extends Thread implements Comparable{
 
 	private int timeOutMS = 20000;
 	
@@ -40,6 +42,10 @@ public abstract class ClientEvent extends Thread implements Comparable{
 	private int priority;
 	private Future initiatingEvent;
 	private Connection initiatingConnection;
+	
+	private Action actionOnRun;
+	private Action actionOnAbort;
+	private Action actionOnTimeOut;
 	
 	public Connection getInitiatingConnection(){
 		return initiatingConnection;
@@ -73,6 +79,19 @@ public abstract class ClientEvent extends Thread implements Comparable{
 		return (System.currentTimeMillis() - timeStartMS);
 	}
 	
+	public ClientEvent setActionOnRun(Action a){
+		actionOnRun = a;
+		return this;
+	}
+	public ClientEvent setActionOnAbort(Action a){
+		actionOnAbort = a;
+		return this;
+	}
+	public ClientEvent setActionOnTimeOut(Action a){
+		actionOnTimeOut = a;
+		return this;
+	}
+	
 	/**
 	 * Each ClientEvent must be started by a Future object.
 	 * 
@@ -101,12 +120,24 @@ public abstract class ClientEvent extends Thread implements Comparable{
 	public ClientEvent(Future ini){
 		initiatingEvent = ini;
 	}
-	@Async
-	public abstract void timedOutExcecute() throws Exception;
 	@Override
-	public abstract void run();
+	public void run(){
+		if(actionOnRun != null){
+			actionOnRun.run();
+		}
+	}
 	@Async
-	public abstract void abortedExecute() throws Exception;
+	public void abortedExecute() throws Exception{
+		if(actionOnAbort != null){
+			actionOnAbort.run();
+		}
+	}
+	@Async
+	public void timedOutExcecute() throws Exception{
+		if(actionOnTimeOut != null){
+			actionOnTimeOut.run();
+		}
+	}
 	@Override
 	public int compareTo(Object o){
 		if(o instanceof ClientEvent){

@@ -35,7 +35,7 @@ import client.JsonClient;
  * Attempts to keep a constant connection to the server, listening to pushes coming from the
  * server resource that this is connected to. Please include a header description "x_method: push"
  */
-public abstract class ServerPushListenerEvent extends ClientEvent{
+public class ServerPushListenerEvent extends ClientEvent{
 	private JsonClient c;
 	private Connection conn;
 	private String extName;
@@ -50,29 +50,18 @@ public abstract class ServerPushListenerEvent extends ClientEvent{
 	 * listener from the server is merely a self-replicating event, this dictates how to
 	 * replicate the event.
 	 * 
-	 * @param conn		The Connection to listen for pushes from
-	 * @param extName	The extension of the Connection to listen for pushes from
+	 * Note that some extra functionality may be needed, so this method can be overridden
+	 * if required.
+	 * 
 	 * @return			The next event in the self-replicating event chain.
 	 */
-	protected abstract ServerPushListenerEvent createNextPushListener(Connection conn, String extName);
-	
-	/**
-	 * Whatever is to be done internally by the response that is returned to this ClientEvent.
-	 *  
-	 */
-	protected abstract void internalExecute(Object response);
+	protected ServerPushListenerEvent createNextPushListener(){
+		return new ServerPushListenerEvent(c, conn, extName);
+	}
 	
 	@Override
 	public final void run(){
-		c.addEvent(createNextPushListener(conn, extName));
-		try {
-			internalExecute(this.getInitiatingEvent().get());
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	};
+		super.run();
+		c.addEvent(createNextPushListener());
+	}
 }
