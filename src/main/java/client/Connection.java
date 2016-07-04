@@ -520,6 +520,11 @@ public class Connection {
 		return new AsyncResult<String>("");
 	}
 	
+	/**
+	 * @param responseEntity The entity that holds all of the information that will be included in the
+	 * server's response.
+	 * @return 
+	 */
 	private String consolidateResponse(HttpEntity responseEntity){
 		try{
 			String lineHolder = "";

@@ -48,9 +48,11 @@ public class JsonClient extends Thread{
 	private int eventLimit = 20;
 	
 	private JsonListenerServlet servlet;
+	
+	private Connection lanConnection;
 			
 	/**
-	 * Constructor linking this JsonClient to a servlet, making this a service client.
+	 * Constructor linking this JsonClient to a servlet when applicable.
 	 * 
 	 * @param jLS	The JsonListenerServlet linked to this client.
 	 */
@@ -60,6 +62,7 @@ public class JsonClient extends Thread{
 	
 	public JsonClient(){
 	}
+	
 	
 	public JsonClient(String connectionName, Connection connection){
 		addConnection(connectionName, connection);
@@ -144,5 +147,10 @@ public class JsonClient extends Thread{
 	}
 	public synchronized void addEvent(ClientEvent e){
 		accessEvents(ADD_EVENT, e);
+	}
+	//Broadcast to broadcast channel + port; once a response is received, add to the client the 
+//	LAN server's connection information.
+	public void discoverLANServer(){
+		
 	}
 }

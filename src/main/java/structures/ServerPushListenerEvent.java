@@ -17,6 +17,7 @@
 
 package structures;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import client.Connection;
@@ -57,13 +58,21 @@ public abstract class ServerPushListenerEvent extends ClientEvent{
 	
 	/**
 	 * Whatever is to be done internally by the response that is returned to this ClientEvent.
-	 * Get the response using this.getInitiatingEvent().get();. 
-	 * 
+	 *  
 	 */
-	protected abstract void internalExecute();
+	protected abstract void internalExecute(Object response);
+	
 	@Override
 	public final void run(){
 		c.addEvent(createNextPushListener(conn, extName));
-		internalExecute();
+		try {
+			internalExecute(this.getInitiatingEvent().get());
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	};
 }

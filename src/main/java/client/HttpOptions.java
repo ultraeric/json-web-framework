@@ -24,7 +24,6 @@ public class HttpOptions {
 	private Map<String, String> header = new HashMap<String, String>();
 	
 	public HttpOptions(){
-		
 	}
 	public HttpOptions(String headerIdentifier, String value){
 		header.put(headerIdentifier, value);
